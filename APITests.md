@@ -1,137 +1,78 @@
-📌 ส่วนที่ 1: ข้อมูลตั้งต้นและการตั้งค่าสิทธิ์ (Info & Collection Auth)
-ส่วนนี้คือ "หัวใจ" ของไฟล์ ทำหน้าที่บอก Postman ว่าไฟล์นี้ชื่ออะไร และตั้งค่าให้ API ทุกตัวในนี้ใช้ระบบ Bearer Token เป็นค่าเริ่มต้น (โดยดึงค่ามาจากตัวแปร {{token}})
+# 🔐 เอกสารอธิบายการเชื่อมต่อระบบ (Authentication & User API)
+> **Base URL:** `http://localhost:5000`
 
-JSON
-"info": {
-    "name": "STD_UTC API Tests",
-    "description": "ชุดทดสอบ API สำหรับระบบจัดการโครงงาน พร้อมระบบ Auto-Token",
-    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
-},
-"auth": {
-    "type": "bearer",
-    "bearer": [
-        {
-            "key": "token",
-            "value": "{{token}}",
-            "type": "string"
-        }
-    ]
-}
-🔐 ส่วนที่ 2: โฟลเดอร์ Auth (ระบบล็อคอิน)
-นี่คือโฟลเดอร์แรก ความพิเศษของส่วนนี้คือโค้ดตรง event ที่ผมเขียน Test Script (JavaScript) ฝังไว้ เพื่อให้มันดึงค่า token จากหลังบ้านมาเซฟเก็บไว้ให้อัตโนมัติเวลาล็อคอินสำเร็จ
+เอกสารนี้ระบุรายละเอียดของ Endpoint สำหรับระบบจัดการสมาชิกและการยืนยันตัวตนทั้งหมดภายในระบบ
 
-JSON
+---
+
+## 1. 🔑 ระบบยืนยันตัวตน (Authentication)
+
+ใช้สำหรับจัดการสิทธิ์การเข้าถึงระบบ ตั้งแต่การลงทะเบียนจนถึงการกู้คืนรหัสผ่าน
+
+### 📋 รายละเอียด Endpoint
+| Endpoint | Method | รายละเอียด | หมายเหตุ |
+| :--- | :---: | :--- | :--- |
+| `/api/auth/login` | `POST` | เข้าสู่ระบบด้วย Email | ระบบจะส่ง Token และข้อมูล User กลับมา |
+| `/api/auth/register` | `POST` | ลงทะเบียนผู้ใช้ใหม่ | รองรับสิทธิ์ Student และ Department Head |
+| `/api/auth/reset-password` | `POST` | เปลี่ยนรหัสผ่านใหม่ | ต้องระบุ Email ที่มีอยู่ในระบบเท่านั้น |
+
+### 💡 ตัวอย่างการ Register (สำหรับหัวหน้าแผนก)
+```json
 {
-    "name": "1. Auth (ระบบจัดการสิทธิ์)",
-    "item": [
-        {
-            "name": "Login (ดึง Token อัตโนมัติ)",
-            "event": [
-                {
-                    "listen": "test",
-                    "script": {
-                        "exec": [
-                            "pm.test(\"Status code is 200\", function () {",
-                            "    pm.response.to.have.status(200);",
-                            "});",
-                            "",
-                            "pm.test(\"Save Token to Variables\", function () {",
-                            "    var jsonData = pm.response.json();",
-                            "    if(jsonData.token) {",
-                            "        pm.collectionVariables.set(\"token\", jsonData.token);",
-                            "    }",
-                            "});"
-                        ],
-                        "type": "text/javascript"
-                    }
-                }
-            ],
-            "request": {
-                "auth": { "type": "noauth" },
-                "method": "POST",
-                "body": {
-                    "mode": "raw",
-                    "raw": "{\n    \"email\": \"admin@utc.ac.th\",\n    \"password\": \"123456\"\n}"
-                },
-                "url": {
-                    "raw": "{{baseUrl}}/api/auth/login",
-                    "host": ["{{baseUrl}}"],
-                    "path": ["api", "auth", "login"]
-                }
-            }
-        }
-    ]
+  "email": "mygigaming2012@gmail.com",
+  "password": "your_secure_password",
+  "full_name": "WatsiriHead",
+  "role": "department_head",
+  "staff_key": "HEAD_COM69"
 }
-👥 ส่วนที่ 3: โฟลเดอร์ Users (ระบบจัดการผู้ใช้)
-โฟลเดอร์นี้สำหรับดึงข้อมูลผู้ใช้ทั้งหมด (เป็น API ที่ต้องใช้สิทธิ์ Admin) ส่วนนี้จะมีการเขียน Test เช็คว่าข้อมูลที่หลังบ้านตอบกลับมาต้องเป็นรูปแบบ Array เสมอ
 
-JSON
+
+# 🚀 การเชื่อมต่อระบบ API (Projects & Evaluations)
+> **Base URL:** `http://localhost:5000`
+
+---
+
+## 1. 📊 ระบบประเมินผลและให้คะแนน (Evaluations API)
+ใช้สำหรับการจัดการข้อมูลคะแนนที่อาจารย์ประเมินโครงงานของนักศึกษา
+
+### 📋 รายละเอียด Endpoint
+| Endpoint | Method | รายละเอียด |
+| :--- | :---: | :--- |
+| `/api/evaluations/:id` | `GET` | ดึงข้อมูลผลการประเมินของโครงงานตาม ID (เช่น `/api/evaluations/33`) |
+| `/api/evaluations/update` | `POST` | บันทึกหรืออัปเดตผลคะแนนและข้อเสนอแนะ |
+
+### 📥 ตัวอย่าง Request Body (POST /update)
+```json
 {
-    "name": "2. Users (ระบบจัดการผู้ใช้)",
-    "item": [
-        {
-            "name": "Get All Users (สำหรับ Admin)",
-            "event": [
-                {
-                    "listen": "test",
-                    "script": {
-                        "exec": [
-                            "pm.test(\"Status code is 200\", function () {",
-                            "    pm.response.to.have.status(200);",
-                            "});",
-                            "pm.test(\"Response is an array\", function () {",
-                            "    var jsonData = pm.response.json();",
-                            "    pm.expect(jsonData.data).to.be.an('array');",
-                            "});"
-                        ],
-                        "type": "text/javascript"
-                    }
-                }
-            ],
-            "request": {
-                "method": "GET",
-                "url": {
-                    "raw": "{{baseUrl}}/api/users",
-                    "host": ["{{baseUrl}}"],
-                    "path": ["api", "users"]
-                }
-            }
-        }
-    ]
+  "project_id": 33,
+  "evaluator_id": 15,
+  "total_score": 95.50,
+  "comment": "แก้ไขเนื้อหาให้สมบูรณ์ขึ้นแล้ว งานดีมากครับ"
 }
-📚 ส่วนที่ 4: โฟลเดอร์ Projects (ระบบจัดการโครงงาน)
-โฟลเดอร์สำหรับจัดการโครงงาน อันนี้เป็นแบบเรียบง่ายที่สุดคือมีแค่ Method GET และ URL ปลายทาง
 
-JSON
+# ✅ เอกสารอธิบายการเชื่อมต่อระบบ (Approve API)
+> **Base URL:** `http://localhost:5000`
+
+ใช้สำหรับการจัดการสถานะโครงงาน (เช่น อนุมัติหัวข้อ, ให้แก้ไข, หรือไม่อนุมัติ) รวมถึงการบันทึกข้อเสนอแนะ (Feedback) กลับไปยังนักศึกษา
+
+---
+
+## 📋 รายการ Endpoints
+
+| Endpoint | Method | รายละเอียด |
+| :--- | :---: | :--- |
+| `/api/approve/all` | `GET` | ดึงข้อมูลโครงงานทั้งหมดที่รอการตรวจสอบ หรือประวัติการอนุมัติทั้งหมด |
+| `/api/approve/update-status/:id` | `PUT` | อัปเดตสถานะและบันทึกข้อเสนอแนะของโครงงานตาม ID (เช่น `/api/approve/update-status/25`) |
+
+---
+
+## 📥 ตัวอย่าง Request Body (PUT /update-status/:id)
+
+เมื่ออาจารย์หรือหัวหน้าแผนกทำการตัดสินใจ หน้าบ้าน (Frontend) จะส่งข้อมูล JSON ดังนี้ไปที่หลังบ้าน:
+
+```json
 {
-    "name": "3. Projects (ระบบจัดการโครงงาน)",
-    "item": [
-        {
-            "name": "Get All Projects",
-            "request": {
-                "method": "GET",
-                "url": {
-                    "raw": "{{baseUrl}}/api/projects",
-                    "host": ["{{baseUrl}}"],
-                    "path": ["api", "projects"]
-                }
-            }
-        }
-    ]
+  "progress_status": "กำลังทำ",
+  "feedback": "หัวข้อน่าสนใจมาก ขอบเขตงานชัดเจน อนุมัติครับ",
+  "approved_by": 15
 }
-⚙️ ส่วนที่ 5: ตัวแปรระบบ (Variables)
-ส่วนนี้จะอยู่ท้ายสุดของไฟล์ JSON เสมอ เอาไว้เก็บค่าคงที่อย่าง baseUrl (เพื่อให้คุณเปลี่ยนทีเดียวแล้วเปลี่ยนทั้งโปรเจกต์) และเป็นที่เก็บกล่องเปล่าๆ ไว้รอรับ token จากการล็อคอินครับ
-
-JSON
-"variable": [
-    {
-        "key": "baseUrl",
-        "value": "http://localhost:5000",
-        "type": "string"
-    },
-    {
-        "key": "token",
-        "value": "",
-        "type": "string"
-    }
-]
