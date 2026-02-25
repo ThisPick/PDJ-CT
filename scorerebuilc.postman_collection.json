@@ -1,0 +1,120 @@
+{
+  "info": {
+    "_postman_id": "df89e601-ed07-4808-ac81-84a384c5f48b",
+    "name": "เกณฑ์การประเมินคะแนน",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "49876414",
+    "_collection_link": "https://go.postman.co/collection/49876414-df89e601-ed07-4808-ac81-84a384c5f48b?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "สร้างเกณฑ์ใหม่",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"title\": \"โครงการพัฒนาซอฟต์แวร์ 55\",\r\n  \"academic_year\": 2569,\r\n  \"level\": \"ปวส.2\",\r\n  \"department\": \"คอมพิวเตอร์\",\r\n  \"total_full_score\": 100,\r\n  \"created_by\": 8,\r\n  \"is_active\": true,\r\n  \"rubric_data\": [\r\n    {\r\n      \"item_name\": \"ส่วนที่ 1: การออกแบบฐานข้อมูล\",\r\n      \"max_score\": 30,\r\n      \"description\": \"ความถูกต้องของ ER Diagram\"\r\n    },\r\n    {\r\n      \"item_name\": \"ส่วนที่ 2: ความสวยงามของ UI\",\r\n      \"max_score\": 30,\r\n      \"description\": \"ความง่ายในการใช้งาน\"\r\n    },\r\n    {\r\n      \"item_name\": \"ส่วนที่ 3: ฟังก์ชันการทำงาน\",\r\n      \"max_score\": 40,\r\n      \"description\": \"ทำงานได้ตามที่กำหนด\"\r\n    }\r\n  ]\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:5000/api/rubrics",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "5000",
+          "path": [
+            "api",
+            "rubrics"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "ดึงข้อมูลทั้งหมด",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:5000/api/rubrics",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "5000",
+          "path": [
+            "api",
+            "rubrics"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "แก้ไขตามไอดี",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"title\": \"โครงการพัฒนาซอฟต์แวร์ 1\",\r\n  \"academic_year\": 2569,\r\n  \"level\": \"ปวส.2\",\r\n  \"department\": \"คอมพิวเตอร์\",\r\n  \"total_full_score\": 100,\r\n  \"created_by\": 1,\r\n  \"is_active\": true,\r\n  \"rubric_data\": [\r\n    { \"item_name\": \"ความสมบูรณ์\", \"max_score\": 50 },\r\n    { \"item_name\": \"การนำเสนอ\", \"max_score\": 50 }\r\n  ]\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:5000/api/rubrics/8",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "5000",
+          "path": [
+            "api",
+            "rubrics",
+            "8"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "ลบข้อมูลตามไอดีในตารางยูส",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:5000/api/rubrics/1",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "5000",
+          "path": [
+            "api",
+            "rubrics",
+            "1"
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}

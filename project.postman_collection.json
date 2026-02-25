@@ -1,0 +1,132 @@
+{
+  "info": {
+    "_postman_id": "6b99f290-5796-4b2c-ab07-f6b913325ffc",
+    "name": "จัดการโปรเนักเรียน",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "49876414",
+    "_collection_link": "https://go.postman.co/collection/49876414-6b99f290-5796-4b2c-ab07-f6b913325ffc?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "ดึงข้อมูลโปรเจคทั้งหมด",
+      "protocolProfileBehavior": {
+        "disableBodyPruning": true
+      },
+      "request": {
+        "method": "GET",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:5000/api/projects",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "5000",
+          "path": [
+            "api",
+            "projects"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "เพิ่ม",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"created_by\": 15,\r\n  \"title_th\": \"วะฮ๋าฮ่า\",\r\n  \"title_en\": \"SSS\",\r\n  \"academic_year\": 2028,\r\n  \"project_level\": \"ปวส.2\",\r\n  \"category\": \"Hardware / IoT\",\r\n  \"advisor\": \"ปิกอัพ สุขหวาน\",\r\n  \"video_url\": \"https://youtu.be/test\",\r\n  \"github_url\": \"https://github.com/test\",\r\n  \"drive_url\": \"https://drive.google.com/test\",\r\n  \"progress_status\": \"สมบูรณ์\",\r\n  \"is_featured\": \"true\",\r\n  \"feedback\": \"โอเคร\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:5000/api/projects",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "5000",
+          "path": [
+            "api",
+            "projects"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "แก้ไขตามไอดี",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "[\r\n    {\r\n        \"project_id\": 15,\r\n        \"created_by\": 1,\r\n        \"title_th\": \"ทดสอบ\",\r\n        \"title_en\": \"TT\",\r\n        \"academic_year\": 2026,\r\n        \"project_level\": \"ปวส.2\",\r\n        \"category\": \"Hardware / IoT\",\r\n        \"progress_status\": \"สมบูรณ์\",\r\n        \"is_featured\": true,\r\n        \"pdf_file_path\": null,\r\n        \"video_url\": \"https://youtu.be/E0ozmU9cJDg?list=RDEMAkKpoB62G5Wmtp0nQxfrDg\",\r\n        \"github_url\": \"https://github.com/WebDevBey/pern-login-register/tree/main/backend\",\r\n        \"drive_url\": \"https://drive.google.com/drive/folders/1Zp1tmDFCS06c80NhnUPCUhMxxfbYMqvP?usp=sharing\",\r\n        \"created_at\": \"2026-02-13T04:53:29.933Z\",\r\n        \"updated_at\": \"2026-02-13T04:53:29.933Z\",\r\n        \"feedback\": \"โอเคร\",\r\n        \"creator_name\": \"วัทน์สิริ สุขหวาน\"\r\n    },\r\n]",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:5000/api/projects/16",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "5000",
+          "path": [
+            "api",
+            "projects",
+            "16"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "ลบตามไอดี",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:5000/api/projects/15",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "5000",
+          "path": [
+            "api",
+            "projects",
+            "15"
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}

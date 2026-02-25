@@ -1,0 +1,269 @@
+{
+  "info": {
+    "_postman_id": "b07d0509-c645-4ed6-81e9-4b6dc6300c3e",
+    "name": "Login Register",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "49876414",
+    "_collection_link": "https://go.postman.co/collection/49876414-b07d0509-c645-4ed6-81e9-4b6dc6300c3e?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "ล็อคอิน",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"email\": \"mygigaming2016@gmail.com\",\r\n  \"password\": \"123456zxc\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:5000/api/auth/login",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "5000",
+          "path": [
+            "api",
+            "auth",
+            "login"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "รีเซ็ตรหัส",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"email\": \"somchai@college.ac.th\",\r\n  \"newPassword\": \"12345\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:5000/api/auth/reset-password",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "5000",
+          "path": [
+            "api",
+            "auth",
+            "reset-password"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "สมัครสมาชิก",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"email\": \"mygigaming2012@gmail.com\",\r\n  \"password\": \"12345678\",\r\n  \"full_name\": \"WatsiriHead\",\r\n  \"role\": \"department_head\",\r\n  \"staff_key\": \"HEAD_COM69\",\r\n  \"phone\": \"\",\r\n  \"student_id\": null,\r\n  \"student_level\": null,\r\n  \"student_group\": null\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:5000/api/auth/register",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "5000",
+          "path": [
+            "api",
+            "auth",
+            "register"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "การแก้ไขยูสเซอร์",
+      "request": {
+        "method": "PUT",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n    \"name\": \"สมชาย เกเร\",\r\n    \"phone\": \"0812345678\",\r\n    \"role\": \"student\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:5000/api/users/upload-avatar/1",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "5000",
+          "path": [
+            "api",
+            "users",
+            "upload-avatar",
+            "1"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "อัพโหลดภาพ",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "role",
+              "value": "student",
+              "type": "text",
+              "uuid": "7b989e81-a3fc-453e-84bc-e5d82cc36b2e",
+              "disabled": true
+            },
+            {
+              "key": "avatar",
+              "type": "file",
+              "uuid": "358e4850-b418-488d-9bf8-3ca9135b1108",
+              "src": "/C:/Users/Admin/Downloads/pb.png",
+              "disabled": true
+            }
+          ]
+        },
+        "url": {
+          "raw": "http://localhost:5000/api/users/upload-avatar/1",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "5000",
+          "path": [
+            "api",
+            "users",
+            "upload-avatar",
+            "1"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "ยูสเซอร์ ตามไอดี",
+      "protocolProfileBehavior": {
+        "disableBodyPruning": true
+      },
+      "request": {
+        "method": "GET",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"email\": \"mygigaming2010@gmail.com\",\r\n  \"password\": \"12345678\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:5000/api/users",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "5000",
+          "path": [
+            "api",
+            "users"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "ลบตามไอดี",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:5000/api/users/7",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "5000",
+          "path": [
+            "api",
+            "users",
+            "7"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "หารูปตามไอดี",
+      "protocolProfileBehavior": {
+        "disableBodyPruning": true
+      },
+      "request": {
+        "method": "GET",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:5000/api/users/profile/15",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "5000",
+          "path": [
+            "api",
+            "users",
+            "profile",
+            "15"
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}

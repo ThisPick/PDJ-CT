@@ -1,0 +1,54 @@
+# ========================
+# Dependencies & Logs
+# ========================
+node_modules/
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ========================
+# Environment Variables
+# ========================
+# 🚨 STRICTLY IGNORE .env FILES
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# ========================
+# Backend (Node.js/Express)
+# ========================
+# Ignore user uploads (PDFs, profile pictures)
+uploads/
+/uploads/*
+!uploads/.gitkeep  # (Optional) Keeps the folder structure without tracking files inside
+
+# ========================
+# Frontend (React / Vite)
+# ========================
+dist/
+dist-ssr/
+build/
+.eslintcache
+
+# ========================
+# OS & Editor Files
+# ========================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
