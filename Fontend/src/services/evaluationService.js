@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:5000/api/evaluations';
+const API_BASE_URL = 'https://reg.utc.ac.th/api/evaluations';
 
 const evaluationService = {
     getAll: async () => {

@@ -1,7 +1,7 @@
 import axios from "axios";
 
 // ดึง Base URL จาก Environment หรือใช้ Localhost เป็นค่าเริ่มต้น
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://reg.utc.ac.th";
 const AUTH_URL = `${API_BASE_URL}/api/auth`;
 
 // ตั้งค่า axios ให้ส่ง Cookie ไปด้วยเสมอ (สำคัญสำหรับระบบที่ใช้ HTTP-only Cookie)

@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // ตั้งค่า Base URL หลักของ Server (เช่น http://localhost:5000)
 // ใช้ค่าจาก .env ถ้ามี หรือใช้ localhost เป็นค่าเริ่มต้น
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://reg.utc.ac.th";
 
 // ตั้งค่าเส้นทางเฉพาะสำหรับระบบ Approve API
 const APPROVE_API_URL = `${API_BASE_URL}/api/approve`;

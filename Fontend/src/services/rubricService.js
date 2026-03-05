@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://reg.utc.ac.th';
 // ปรับ RUBRIC_BASE ให้ชัวร์ว่าไม่มีปัญหาเรื่อง slash ซ้อน
 const RUBRIC_BASE = `${API_BASE_URL}/api/rubrics`.replace(/\/$/, '');
 

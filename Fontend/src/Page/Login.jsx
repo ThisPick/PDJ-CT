@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { login } from '../services/auth'; 
 import { DesktopOutlined } from '@ant-design/icons';
+import Swal from 'sweetalert2'; // นำเข้า SweetAlert2
 
 export const Login = () => {
   const [role, setRole] = useState('student');
@@ -24,26 +25,32 @@ export const Login = () => {
         const dbRole = user.role; 
         const token = result.token || result.data?.token; 
 
+        // ตรวจสอบความถูกต้องของสิทธิ์ (Role)
         const selectedRole = role === 'admin' ? 'department_head' : role;
         
         if (dbRole !== selectedRole) {
           let roleName = dbRole === 'student' ? "นักศึกษา" : dbRole === 'teacher' ? "ครู" : "หัวหน้าแผนก";
-          setError(`⚠️ บัญชีนี้เป็นสิทธิ์ของ "${roleName}" กรุณาเลือกสิทธิ์ให้ถูกต้อง`);
+          
+          // แจ้งเตือนกรณีเลือก Role ผิด
+          Swal.fire({
+            icon: 'warning',
+            title: 'สิทธิ์การเข้าใช้งานไม่ถูกต้อง',
+            text: `บัญชีนี้เป็นสิทธิ์ของ "${roleName}" กรุณาเลือกสิทธิ์ให้ถูกต้อง`,
+            confirmButtonColor: '#10b981',
+          });
+          
           setLoading(false);
           return; 
         }
 
+        // จัดการเรื่อง Token และ LocalStorage
         localStorage.clear();
-        
         if (!token) {
-          setError("ไม่พบรหัสยืนยันตัวตน (Token) จากเซิร์ฟเวอร์");
-          setLoading(false);
-          return;
+          throw new Error("ไม่พบรหัสยืนยันตัวตน (Token) จากเซิร์ฟเวอร์");
         }
 
-        // เก็บข้อมูล User ลง LocalStorage
         const userDataToSave = {
-           id: user.id, // บังคับเป็นตัวเลข
+           id: user.id,
            full_name: user.full_name,
            role: user.role
         };
@@ -51,16 +58,35 @@ export const Login = () => {
         localStorage.setItem('user', JSON.stringify(userDataToSave));
         localStorage.setItem('token', token);
 
-        setTimeout(() => {
+        // ✅ แสดง Windows Alert แบบสวยงาม (SweetAlert2)
+        Swal.fire({
+          icon: 'success',
+          title: 'เข้าสู่ระบบสำเร็จ',
+          text: `ยินดีต้อนรับคุณ ${user.full_name}`,
+          showConfirmButton: false,
+          timer: 1500, // ปิดเองภายใน 1.5 วินาที
+          timerProgressBar: true,
+        }).then(() => {
+          // นำทางไปยัง Dashboard หลังจาก Alert ปิดลง
           if (dbRole === 'teacher' || dbRole === 'department_head') {
             navigate('/Admindashboard', { replace: true }); 
           } else if (dbRole === 'student') {
             navigate('/Studentdashboard', { replace: true }); 
           }
-        }, 300);
+        });
+
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'อีเมลหรือรหัสผ่านไม่ถูกต้อง');
+      const errorMsg = err.response?.data?.message || 'อีเมลหรือรหัสผ่านไม่ถูกต้อง';
+      setError(errorMsg);
+      
+      // แจ้งเตือนกรณี Login ผิดพลาด
+      Swal.fire({
+        icon: 'error',
+        title: 'เข้าสู่ระบบไม่สำเร็จ',
+        text: errorMsg,
+        confirmButtonColor: '#ef4444',
+      });
     } finally {
       setLoading(false);
     }
@@ -108,7 +134,7 @@ export const Login = () => {
           {/* Login Form */}
           <form className="space-y-5" onSubmit={handleLogin}>
             {error && (
-              <div className="text-center text-red-500 text-xs font-bold bg-red-50 p-2.5 rounded-xl border border-red-100">
+              <div className="text-center text-red-500 text-xs font-bold bg-red-50 p-2.5 rounded-xl border border-red-100 animate-pulse">
                 {error}
               </div>
             )}
@@ -120,7 +146,7 @@ export const Login = () => {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full rounded-2xl border-2 border-emerald-50 bg-white px-5 py-3.5 text-emerald-900 focus:border-emerald-500 focus:outline-none transition-all"
+                className="w-full rounded-2xl border-2 border-emerald-50 bg-white px-5 py-3.5 text-emerald-900 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 focus:outline-none transition-all"
                 placeholder="example@college.ac.th"
               />
             </div>
@@ -132,7 +158,7 @@ export const Login = () => {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-2xl border-2 border-emerald-50 bg-white px-5 py-3.5 text-emerald-900 focus:border-emerald-500 focus:outline-none transition-all"
+                className="w-full rounded-2xl border-2 border-emerald-50 bg-white px-5 py-3.5 text-emerald-900 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 focus:outline-none transition-all"
                 placeholder="••••••••"
               />
             </div>
@@ -141,26 +167,30 @@ export const Login = () => {
               type="submit" 
               disabled={loading}
               className={`w-full mt-2 rounded-2xl bg-gradient-to-r from-emerald-600 to-green-500 py-4 font-black text-white shadow-xl transition-all active:scale-95 ${
-                loading ? 'opacity-70 cursor-not-allowed' : 'hover:-translate-y-0.5'
+                loading ? 'opacity-70 cursor-not-allowed' : 'hover:-translate-y-0.5 hover:shadow-emerald-200'
               }`}
             >
-              {loading ? 'กำลังตรวจสอบ...' : 'เข้าสู่ระบบ'}
+              {loading ? (
+                <span className="flex items-center justify-center gap-2">
+                   <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                   กำลังตรวจสอบ...
+                </span>
+              ) : 'เข้าสู่ระบบ'}
             </button>
           </form>
 
-          {/* ลิงก์ด้านล่างฟอร์ม (เปลี่ยนรหัสผ่าน & สมัครสมาชิก) */}
-          <div className="mt-8 flex flex-col items-center gap-3">
-            {/* ✅ ปุ่มลิงก์ไปหน้าเปลี่ยนรหัสผ่าน */}
+          {/* Links Section */}
+          <div className="mt-8 flex flex-col items-center gap-3 border-t border-emerald-50 pt-6">
             <Link 
               to="/reset-password" 
-              className="text-sm font-bold text-emerald-600 hover:text-emerald-500 hover:underline transition-all"
+              className="text-sm font-bold text-emerald-600 hover:text-emerald-500 transition-all"
             >
-              ลืมรหัสผ่านใช่หรือไม่? (Reset Password)
+              ลืมรหัสผ่านใช่หรือไม่?
             </Link>
 
             <p className="text-sm font-medium text-emerald-800">
               ยังไม่มีบัญชี?{' '}
-              <Link to="/register" className="font-black text-emerald-600 underline decoration-2 underline-offset-4 hover:text-emerald-500 transition-colors">
+              <Link to="/register" className="font-black text-emerald-600 underline decoration-2 underline-offset-4 hover:text-emerald-400 transition-colors">
                 สมัครสมาชิก
               </Link>
             </p>

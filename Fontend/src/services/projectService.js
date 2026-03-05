@@ -1,7 +1,7 @@
 // แนะนำให้ใช้ Environment Variable ในการเก็บ URL
 const API_URL = import.meta.env.VITE_API_BASE_URL 
   ? `${import.meta.env.VITE_API_BASE_URL}/api/projects` 
-  : 'http://localhost:5000/api/projects';
+  : 'https://reg.utc.ac.th/api/projects';
 
 // 1. ดึงข้อมูลทั้งหมด
 export const getAllProjects = async () => {

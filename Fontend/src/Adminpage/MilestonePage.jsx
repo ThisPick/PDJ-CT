@@ -2,50 +2,99 @@ import React, { useState, useEffect } from 'react';
 import { 
   Layout, Card, Table, Tag, Button, Input, Select, 
   Steps, Drawer, Typography, Row, Col, 
-  Space, Badge, Divider, message, Spin
+  Space, Badge, Divider, message, Spin, Progress, Statistic,
+  Alert, Empty, FloatButton
 } from 'antd';
 import { 
   SearchOutlined, CheckCircleOutlined, 
   ExclamationCircleOutlined, AuditOutlined, UserOutlined,
-  FilePdfOutlined, GithubOutlined, YoutubeOutlined, GoogleOutlined
+  FilePdfOutlined, GithubOutlined, YoutubeOutlined, GoogleOutlined,
+  RiseOutlined, TeamOutlined, ClockCircleOutlined, BellOutlined,
+  LoadingOutlined, FireOutlined
 } from '@ant-design/icons';
 import AdminSidebar from './AdminSidebar';
 import { getAllProjects } from '../services/projectService';
 
 const { Content } = Layout;
-const { Title, Text, Paragraph } = Typography;
+const { Title, Text } = Typography;
 const { TextArea } = Input;
 const { Option } = Select;
 
-// โครงสร้าง Milestone
 const milestoneSteps = [
   "เสนอหัวข้อ", 
   "ออกแบบระบบ", 
-  "พัฒนาชิ้นงาน 50%", 
-  "พัฒนาชิ้นงาน 100%", 
+  "พัฒนา 50%", 
+  "พัฒนา 100%", 
   "ส่งเล่มสมบูรณ์"
 ];
+
+/* ─────────────────────────────────────────────────────
+   WEB AUDIO ENGINE
+───────────────────────────────────────────────────── */
+class SoundEngine {
+  constructor() { this.ctx = null; }
+  _ctx() {
+    if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    return this.ctx;
+  }
+  _play(fn) { try { fn(this._ctx()); } catch(e){} }
+
+  pop() {
+    this._play(ctx => {
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.type = 'triangle';
+      o.frequency.setValueAtTime(320, ctx.currentTime);
+      o.frequency.exponentialRampToValueAtTime(900, ctx.currentTime + 0.05);
+      g.gain.setValueAtTime(0.22, ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.09);
+      o.start(); o.stop(ctx.currentTime + 0.09);
+    });
+  }
+
+  success() {
+    this._play(ctx => {
+      [523.25, 659.25, 783.99].forEach((f, i) => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.connect(g); g.connect(ctx.destination);
+        o.type = 'sine'; o.frequency.value = f;
+        const t = ctx.currentTime + i * 0.1;
+        g.gain.setValueAtTime(0, t);
+        g.gain.linearRampToValueAtTime(0.22, t + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + 0.35);
+        o.start(t); o.stop(t + 0.35);
+      });
+    });
+  }
+
+  alert() {
+    this._play(ctx => {
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.type = 'sine';
+      o.frequency.setValueAtTime(440, ctx.currentTime);
+      o.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.1);
+      g.gain.setValueAtTime(0.2, ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.2);
+      o.start(); o.stop(ctx.currentTime + 0.2);
+    });
+  }
+}
+
+const sfx = new SoundEngine();
 
 const MilestonePage = () => {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
-  
   const [searchText, setSearchText] = useState('');
   const [filterStatus, setFilterStatus] = useState('ทั้งหมด');
-  
-  // Drawer State
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState(null);
-  const [feedback, setFeedback] = useState('');
 
-  // --- 📡 ดึงข้อมูลจริงจาก Backend ---
-const fetchProjects = async () => {
+  const fetchProjects = async () => {
     setLoading(true);
     try {
-      // ✅ 1. เปลี่ยนมาใช้ getAllProjects() ตรงๆ
       const res = await getAllProjects();
-      
-      // ✅ 2. ดักจับข้อมูลให้ออกมาเป็น Array เสมอ ป้องกันตัวกรอง (filter) ด้านล่างพัง
       let data = [];
       if (Array.isArray(res)) {
         data = res;
@@ -54,11 +103,10 @@ const fetchProjects = async () => {
       } else if (res && res.data && Array.isArray(res.data.data)) {
         data = res.data.data;
       }
-
       setProjects(data);
     } catch (error) {
       console.error("Error fetching projects:", error);
-      message.error("ไม่สามารถดึงข้อมูลโครงงานได้");
+      message.error("❌ ไม่สามารถดึงข้อมูลโครงงานได้");
     } finally {
       setLoading(false);
     }
@@ -68,331 +116,497 @@ const fetchProjects = async () => {
     fetchProjects();
   }, []);
 
-  // --- 🔍 Logic การกรองข้อมูล (ใช้ของเดิมได้เลยครับ เขียนมาดีแล้ว) ---
   const filteredProjects = projects.filter(p => {
     const searchLower = searchText.toLowerCase();
-    // ✅ ดึงชื่อจาก student_name เป็นหลัก ถ้าไม่มีถึงใช้ creator_name
-    const studentName = p.student_name || p.creator_name || ''; 
-    
+    const studentName = p.student_name || p.creator_name || '';
     const matchSearch = 
-        (p.title_th && p.title_th.toLowerCase().includes(searchLower)) || 
-        studentName.toLowerCase().includes(searchLower);
+      (p.title_th && p.title_th.toLowerCase().includes(searchLower)) || 
+      studentName.toLowerCase().includes(searchLower);
     
-    let currentStatus = p.progress_status;
     if (filterStatus === 'ทั้งหมด') return matchSearch;
-    return matchSearch && currentStatus === filterStatus;
+    return matchSearch && p.progress_status === filterStatus;
   });
 
-  // --- ฟังก์ชันจัดการ Drawer ---
   const handleOpenDrawer = (project) => {
+    sfx.pop();
     setSelectedProject(project);
-    setFeedback(project.feedback || ''); 
     setIsDrawerOpen(true);
   };
 
-  // --- 🎨 Helper Functions สำหรับ UI ---
-  const getStatusBadge = (status) => {
-    if (!status) return <Badge status="default" text={<span className="text-gray-600 font-bold text-lg">ไม่ทราบสถานะ</span>} />;
-    
-    if (status.includes('รอตรวจ') || status.includes('รออนุมัติ')) {
-        return <Badge status="warning" text={<span className="text-orange-600 font-bold text-lg">{status}</span>} />;
-    } else if (status.includes('ล่าช้า') || status === 'ไม่ผ่าน') {
-        return <Badge status="error" text={<span className="text-red-600 font-bold text-lg">{status}</span>} />;
-    } else if (status === 'สมบูรณ์' || status === 'ผ่าน') {
-        return <Badge status="success" text={<span className="text-green-600 font-bold text-lg">{status}</span>} />;
-    }
-    return <Badge status="processing" text={<span className="text-blue-600 font-bold text-lg">{status}</span>} />;
+  const getProgressPercent = (status) => {
+    const map = {
+      'รออนุมัติหัวข้อ': 15,
+      'ออกแบบระบบ': 25,
+      'กำลังทำ': 60,
+      'รออนุมัติเล่ม': 85,
+      'สมบูรณ์': 100,
+      'ไม่ผ่าน': 0,
+      'ล่าช้า': 50,
+    };
+    return map[status] || 0;
+  };
+
+  const getProgressColor = (status) => {
+    const map = {
+      'สมบูรณ์': '#10b981',
+      'กำลังทำ': '#3b82f6',
+      'รออนุมัติหัวข้อ': '#f59e0b',
+      'รออนุมัติเล่ม': '#f97316',
+      'ล่าช้า': '#ef4444',
+      'ไม่ผ่าน': '#dc2626',
+    };
+    return map[status] || '#6b7280';
   };
 
   const getMilestoneIndex = (status) => {
-      if(status === 'รออนุมัติหัวข้อ') return 0;
-      if(status === 'กำลังทำ') return 2;
-      if(status === 'รออนุมัติเล่ม') return 4;
-      if(status === 'สมบูรณ์') return 5;
-      return 1;
+    const map = {
+      'รออนุมัติหัวข้อ': 0,
+      'กำลังทำ': 2,
+      'รออนุมัติเล่ม': 4,
+      'สมบูรณ์': 5,
+    };
+    return map[status] || 1;
   };
 
   const formatDate = (dateString) => {
-      if (!dateString) return 'ไม่มีข้อมูลเวลา';
-      const date = new Date(dateString);
-      return date.toLocaleString('th-TH', { 
-          year: 'numeric', month: 'short', day: 'numeric', 
-          hour: '2-digit', minute:'2-digit' 
-      });
+    if (!dateString) return 'ไม่มีข้อมูล';
+    const date = new Date(dateString);
+    return date.toLocaleString('th-TH', { 
+      year: 'numeric', month: 'short', day: 'numeric'
+    });
   };
+
+  const pendingCount = projects.filter(p => p.progress_status?.includes('รอ')).length;
+  const completeCount = projects.filter(p => p.progress_status === 'สมบูรณ์').length;
+  const inProgressCount = projects.filter(p => p.progress_status === 'กำลังทำ').length;
+  const failedCount = projects.filter(p => p.progress_status === 'ไม่ผ่าน' || p.progress_status === 'ล่าช้า').length;
+  const avgProgress = projects.length > 0 ? Math.round(projects.reduce((sum, p) => sum + getProgressPercent(p.progress_status), 0) / projects.length) : 0;
 
   const columns = [
     {
-      title: <span className="text-xl font-bold text-slate-700">ข้อมูลโครงงาน</span>,
+      title: <span className="text-base font-bold">📚 โครงงาน</span>,
       key: 'info',
-      width: '35%',
+      width: '28%',
       render: (_, r) => (
-        <div className="py-2">
-          <Text strong className="block text-2xl text-indigo-900 mb-2">{r.title_th}</Text>
-          <div className="flex flex-col gap-1 text-lg text-slate-600">
-            {/* ✅ แสดงชื่อผู้จัดทำแบบดึงจากช่องพิมพ์อิสระ */}
-            <span><UserOutlined className="mr-2 text-indigo-500" />ผู้จัดทำโครงงาน: <b>{r.student_name || r.creator_name || 'ไม่ระบุชื่อ'}</b></span>
-            {r.advisor && <span><AuditOutlined className="mr-2 text-indigo-500" />ที่ปรึกษา: <b>{r.advisor}</b></span>}
+        <div className="space-y-2">
+          <Text strong className="text-lg text-indigo-900">{r.title_th}</Text>
+          <div className="text-sm space-y-1">
+            <div className="text-slate-600"><UserOutlined className="mr-1 text-indigo-500" />{r.student_name || r.creator_name || 'ไม่ระบุ'}</div>
+            {r.advisor && <div className="text-slate-600"><AuditOutlined className="mr-1 text-indigo-500" />{r.advisor}</div>}
           </div>
-          <div className="mt-3 space-x-2">
-             <Tag color="geekblue" className="text-base px-3 py-1">{r.category}</Tag>
-             <Tag color="purple" className="text-base px-3 py-1">{r.project_level}</Tag>
-          </div>
+          <Space size={4}>
+            <Tag color="blue">{r.category}</Tag>
+            <Tag color="purple">{r.project_level}</Tag>
+          </Space>
         </div>
       )
     },
     {
-      title: <span className="text-xl font-bold text-slate-700">สถานะ Milestone</span>,
-      key: 'milestone',
-      width: '45%',
+      title: <span className="text-base font-bold">⚡ ความก้าวหน้า</span>,
+      key: 'progress',
+      width: '34%',
       render: (_, r) => {
-        const stepIndex = getMilestoneIndex(r.progress_status);
-        const isPending = r.progress_status?.includes('รอ');
+        const percent = getProgressPercent(r.progress_status);
         return (
-            <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100">
-            <div className="mb-4 flex justify-between items-center">
-                {getStatusBadge(r.progress_status)}
-                <Text type="secondary" className="text-sm">อัปเดต: {formatDate(r.updated_at || r.created_at)}</Text>
+          <div className="space-y-3">
+            <div className="flex justify-between mb-2">
+              <span className="font-semibold text-slate-700">{r.progress_status}</span>
+              <span className="text-lg font-black text-indigo-600">{percent}%</span>
             </div>
-            <Steps 
-                current={stepIndex} 
-                size="small"
-                className="custom-steps"
-                status={isPending ? 'process' : (r.progress_status === 'ไม่ผ่าน' ? 'error' : 'finish')}
-                items={milestoneSteps.map((m) => ({
-                title: <span className="text-sm font-bold text-slate-600">{m}</span>,
-                }))}
+            <Progress 
+              percent={percent} 
+              strokeColor={getProgressColor(r.progress_status)}
+              format={() => null}
+              size={["100%", 12]}
             />
-            </div>
-        )
+            <Text type="secondary" className="text-xs block">อัปเดต: {formatDate(r.updated_at)}</Text>
+          </div>
+        );
       }
     },
     {
-      title: <span className="text-xl font-bold text-slate-700 text-center block">จัดการ</span>,
-      key: 'action',
+      title: <span className="text-base font-bold">🎯 Milestone</span>,
+      key: 'milestone',
       width: '20%',
       align: 'center',
       render: (_, r) => {
-        const isPending = r.progress_status?.includes('รอ');
+        const stepIndex = getMilestoneIndex(r.progress_status);
         return (
-            <Button 
-                type={isPending ? 'primary' : 'default'}
-                size="large"
-                className={`h-14 px-6 text-lg rounded-xl font-bold shadow-md transition-all hover:scale-105 ${isPending ? 'bg-orange-500 hover:bg-orange-400 border-none' : 'border-slate-300 text-slate-600'}`}
-                onClick={() => handleOpenDrawer(r)}
-            >
-            ดูรายละเอียด
-            </Button>
-        )
+          <div className="text-center">
+            <Badge 
+              count={stepIndex + 1}
+              style={{ backgroundColor: getProgressColor(r.progress_status), fontSize: '16px', fontWeight: 'bold' }}
+              showZero
+            />
+            <div className="text-xs text-slate-600 mt-2">{milestoneSteps[stepIndex]}</div>
+          </div>
+        );
       }
+    },
+    {
+      title: <span className="text-base font-bold text-center">👁️ ดู</span>,
+      key: 'action',
+      width: '18%',
+      align: 'center',
+      render: (_, r) => (
+        <Button 
+          type="primary"
+          size="small"
+          className="bg-indigo-600 hover:bg-indigo-700 font-semibold transition-all hover:scale-110"
+          onClick={() => handleOpenDrawer(r)}
+        >
+          รายละเอียด
+        </Button>
+      )
     }
   ];
 
   return (
-    <Layout className="min-h-screen">
+    <Layout className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
       <AdminSidebar />
       <Layout>
-        <Content className="p-10 bg-[#f8fafc]">
-          <div className="max-w-[95%] mx-auto">
+        <Content className="p-4 md:p-8 lg:p-10">
+          <div className="max-w-7xl mx-auto">
             
-            {/* Header & Stats */}
-            <div className="flex flex-col lg:flex-row justify-between items-center mb-8 gap-6 bg-white p-8 rounded-3xl shadow-lg border border-slate-100">
-              <div className="flex items-center gap-5">
-                <div className="bg-indigo-600 p-5 rounded-2xl shadow-lg shadow-indigo-200">
-                    <AuditOutlined className="text-5xl text-white" />
-                </div>
-                <div>
-                  <Title level={1} style={{ margin: 0, color: '#1e293b', fontSize: '2.5rem' }}>
-                    กระดานติดตามความคืบหน้า
-                  </Title>
-                  <Text className="text-xl text-slate-500 mt-2 block">
-                    ติดตาม Milestone และดูรายละเอียดไฟล์งานของนักศึกษา
-                  </Text>
-                </div>
-              </div>
-              
-              <div className="flex gap-4 w-full lg:w-auto overflow-x-auto pb-2">
-                  <div className="bg-orange-50 px-8 py-4 rounded-2xl border-2 border-orange-100 text-center min-w-[180px]">
-                      <Text className="text-xl text-orange-600 font-bold block mb-1">รอตรวจ</Text>
-                      <span className="text-4xl font-black text-orange-600">
-                          {projects.filter(p => p.progress_status?.includes('รอ')).length}
-                      </span>
+            {/* Header */}
+            <div className="mb-8 animate-fade-in-up">
+              <div className="bg-gradient-to-r from-indigo-600 to-indigo-700 text-white p-8 rounded-3xl shadow-xl">
+                <div className="flex items-center justify-between flex-wrap gap-4">
+                  <div className="flex items-center gap-4">
+                    <div className="p-4 rounded-2xl bg-white/20 backdrop-blur-sm">
+                      <RiseOutlined className="text-4xl" />
+                    </div>
+                    <div>
+                      <Title level={2} style={{ margin: 0, color: 'white' }}>📈 ติดตามความก้าวหน้า</Title>
+                      <Text style={{ color: 'rgba(255,255,255,0.9)' }}>โครงงานนักศึกษา</Text>
+                    </div>
                   </div>
-                  <div className="bg-green-50 px-8 py-4 rounded-2xl border-2 border-green-100 text-center min-w-[180px]">
-                      <Text className="text-xl text-green-600 font-bold block mb-1">สมบูรณ์</Text>
-                      <span className="text-4xl font-black text-green-600">
-                          {projects.filter(p => p.progress_status === 'สมบูรณ์').length}
-                      </span>
-                  </div>
+                  <div className="text-5xl">🎯</div>
+                </div>
               </div>
             </div>
 
-            {/* Filter & Table */}
-            <Card className="rounded-3xl shadow-xl border border-slate-200 overflow-hidden" bodyStyle={{ padding: '32px' }}>
-              <div className="flex flex-col md:flex-row gap-6 mb-8">
+            {/* Stats Cards */}
+            <Row gutter={16} className="mb-8">
+              <Col xs={24} sm={12} lg={6}>
+                <Card className="rounded-2xl shadow-md border-0 hover:shadow-lg hover:scale-105 transition-all transform cursor-pointer" onClick={() => { sfx.pop(); setFilterStatus('กำลังทำ'); }}>
+                  <Statistic
+                    title={<span className="text-sm font-semibold text-slate-600 flex items-center"><LoadingOutlined className="mr-2 animate-spin text-blue-500" />กำลังดำเนิน</span>}
+                    value={inProgressCount}
+                    valueStyle={{ color: '#3b82f6', fontSize: '2.5rem', fontWeight: 'bold' }}
+                  />
+                </Card>
+              </Col>
+
+              <Col xs={24} sm={12} lg={6}>
+                <Card className="rounded-2xl shadow-md border-0 hover:shadow-lg hover:scale-105 transition-all transform cursor-pointer" onClick={() => { sfx.pop(); setFilterStatus('รออนุมัติหัวข้อ'); }}>
+                  <Statistic
+                    title={<span className="text-sm font-semibold text-slate-600 flex items-center"><BellOutlined className="mr-2 text-orange-500 animate-bounce" />รอตรวจสอบ</span>}
+                    value={pendingCount}
+                    valueStyle={{ color: '#f97316', fontSize: '2.5rem', fontWeight: 'bold' }}
+                  />
+                </Card>
+              </Col>
+
+              <Col xs={24} sm={12} lg={6}>
+                <Card className="rounded-2xl shadow-md border-0 hover:shadow-lg hover:scale-105 transition-all transform cursor-pointer" onClick={() => { sfx.pop(); setFilterStatus('สมบูรณ์'); }}>
+                  <Statistic
+                    title={<span className="text-sm font-semibold text-slate-600 flex items-center"><CheckCircleOutlined className="mr-2 text-green-500" />สมบูรณ์</span>}
+                    value={completeCount}
+                    valueStyle={{ color: '#10b981', fontSize: '2.5rem', fontWeight: 'bold' }}
+                  />
+                </Card>
+              </Col>
+
+              <Col xs={24} sm={12} lg={6}>
+                <Card className="rounded-2xl shadow-md border-0 hover:shadow-lg hover:scale-105 transition-all transform">
+                  <Statistic
+                    title={<span className="text-sm font-semibold text-slate-600 flex items-center"><FireOutlined className="mr-2 text-purple-500" />ความก้าวหน้า</span>}
+                    value={avgProgress}
+                    suffix="%"
+                    valueStyle={{ color: '#8b5cf6', fontSize: '2.5rem', fontWeight: 'bold' }}
+                  />
+                </Card>
+              </Col>
+            </Row>
+
+            {/* Alerts */}
+            {failedCount > 0 && (
+              <Alert
+                message={`⚠️ มีโครงงาน ${failedCount} รายการมีปัญหา`}
+                description="โครงงานเหล่านี้ล่าช้าหรือไม่ผ่านการตรวจสอบ ต้องเร่งดำเนิน"
+                type="warning"
+                showIcon
+                closable
+                className="mb-6 rounded-xl text-base animate-pulse"
+              />
+            )}
+
+            {pendingCount > 0 && (
+              <Alert
+                message={`🔔 ${pendingCount} โครงงานรอการอนุมัติ`}
+                type="info"
+                showIcon
+                closable
+                className="mb-6 rounded-xl text-base"
+              />
+            )}
+
+            {/* Filter */}
+            <Card className="rounded-2xl shadow-lg border-slate-200 mb-6">
+              <div className="flex flex-col md:flex-row gap-4">
                 <Input
                   size="large"
-                  placeholder="ค้นหาชื่อโครงงาน หรือ ชื่อผู้จัดทำ..."
-                  prefix={<SearchOutlined className="text-slate-400 text-2xl mr-3" />}
+                  placeholder="🔍 ค้นหา..."
+                  prefix={<SearchOutlined />}
                   value={searchText}
-                  onChange={(e) => setSearchText(e.target.value)}
-                  className="flex-1 h-16 text-xl rounded-2xl border-slate-300 hover:border-indigo-400 focus:border-indigo-500 shadow-sm px-6"
+                  onChange={(e) => { sfx.pop(); setSearchText(e.target.value); }}
+                  className="flex-1 rounded-xl"
                   allowClear
                 />
                 <Select
                   size="large"
                   value={filterStatus}
-                  onChange={setFilterStatus}
-                  className="w-full md:w-64 h-16 text-xl"
-                  dropdownStyle={{ fontSize: '1.25rem' }}
+                  onChange={(v) => { sfx.pop(); setFilterStatus(v); }}
+                  className="w-full md:w-56 rounded-xl"
                 >
-                  <Option value="ทั้งหมด">แสดงทั้งหมด</Option>
-                  <Option value="รออนุมัติหัวข้อ">รออนุมัติหัวข้อ</Option>
-                  <Option value="กำลังทำ">กำลังทำ</Option>
-                  <Option value="รออนุมัติเล่ม">รออนุมัติเล่ม</Option>
-                  <Option value="สมบูรณ์">สมบูรณ์</Option>
+                  <Option value="ทั้งหมด">📋 ทั้งหมด ({projects.length})</Option>
+                  <Option value="กำลังทำ">🔨 กำลังทำ ({inProgressCount})</Option>
+                  <Option value="รออนุมัติหัวข้อ">⏳ รอการอนุมัติ ({pendingCount})</Option>
+                  <Option value="สมบูรณ์">✅ สมบูรณ์ ({completeCount})</Option>
                 </Select>
               </div>
-
-              {loading ? (
-                 <div className="text-center py-20"><Spin size="large" /><div className="mt-4 text-xl text-gray-500">กำลังโหลดข้อมูล...</div></div>
-              ) : (
-                <Table 
-                    columns={columns} 
-                    dataSource={filteredProjects}
-                    rowKey="project_id"
-                    pagination={{ pageSize: 10, className: 'text-lg' }}
-                    className="border border-slate-100 rounded-2xl overflow-hidden"
-                    rowClassName="hover:bg-slate-50 transition-colors"
-                />
-              )}
             </Card>
 
+            {/* Table */}
+            {loading ? (
+              <Card className="rounded-2xl shadow-lg">
+                <div className="text-center py-20">
+                  <Spin size="large" />
+                  <Text className="mt-4 block text-slate-500 font-semibold">กำลังโหลด...</Text>
+                </div>
+              </Card>
+            ) : filteredProjects.length === 0 ? (
+              <Card className="rounded-2xl shadow-lg">
+                <Empty description="ไม่พบโครงงาน" style={{ paddingBlock: 80 }} />
+              </Card>
+            ) : (
+              <Card className="rounded-2xl shadow-lg border-slate-200">
+                <Table 
+                  columns={columns} 
+                  dataSource={filteredProjects}
+                  rowKey="project_id"
+                  pagination={{ pageSize: 10, showSizeChanger: true }}
+                  rowClassName="hover:bg-indigo-50 transition-colors cursor-pointer"
+                  scroll={{ x: 900 }}
+                />
+              </Card>
+            )}
           </div>
         </Content>
       </Layout>
 
-      {/* --- Drawer ตรวจงาน (ขนาดใหญ่พิเศษ) --- */}
+      {/* Drawer */}
       <Drawer
         title={
-          <div className="text-2xl font-black text-indigo-800">
-            <AuditOutlined className="mr-3 text-indigo-600" />
-            รายละเอียดงาน Milestone
+          <div className="text-2xl font-black text-indigo-800 flex items-center gap-2">
+            <AuditOutlined className="text-indigo-600" />
+            รายละเอียดโครงงาน
           </div>
         }
         placement="right"
-        width={850}
-        onClose={() => setIsDrawerOpen(false)}
+        width={window.innerWidth < 768 ? '100%' : 900}
+        onClose={() => { sfx.pop(); setIsDrawerOpen(false); }}
         open={isDrawerOpen}
-        className="milestone-drawer"
+        bodyStyle={{ padding: '24px' }}
       >
         {selectedProject && (
-          <div className="space-y-8">
-            {/* Project Info Summary */}
-            <div className="bg-indigo-50 p-8 rounded-3xl border border-indigo-100">
-              <Title level={2} className="!mt-0 !mb-4 text-indigo-900">{selectedProject.title_th}</Title>
-              <div className="grid grid-cols-2 gap-4 text-lg text-slate-700">
-                 {/* ✅ แสดงชื่อผู้จัดทำแบบดึงจากช่องพิมพ์อิสระ */}
-                 <div><b>ผู้จัดทำ:</b> {selectedProject.student_name || selectedProject.creator_name || 'ไม่ระบุชื่อ'}</div>
-                 <div><b>อัปเดตล่าสุด:</b> <span className="text-indigo-600 font-bold">{formatDate(selectedProject.updated_at || selectedProject.created_at)}</span></div>
-                 <div><b>สถานะปัจจุบัน:</b> {getStatusBadge(selectedProject.progress_status)}</div>
-                 <div><b>หมวดหมู่:</b> {selectedProject.category}</div>
-              </div>
+          <div className="space-y-6 animate-fade-in-up">
+            {/* Project Header */}
+            <div className="bg-gradient-to-r from-indigo-50 to-blue-50 p-6 rounded-2xl border border-indigo-100">
+              <Title level={3} className="!mt-0 !mb-3 text-indigo-900">{selectedProject.title_th}</Title>
+              <Text type="secondary" className="block mb-4">{selectedProject.title_en}</Text>
+              
+              <Row gutter={16}>
+                <Col xs={24} sm={12}>
+                  <div className="bg-white p-3 rounded-lg">
+                    <Text type="secondary" className="text-xs block">ผู้จัดทำ</Text>
+                    <Text strong className="text-base">{selectedProject.student_name || selectedProject.creator_name || 'ไม่ระบุ'}</Text>
+                  </div>
+                </Col>
+                <Col xs={24} sm={12}>
+                  <div className="bg-white p-3 rounded-lg">
+                    <Text type="secondary" className="text-xs block">ที่ปรึกษา</Text>
+                    <Text strong className="text-base">{selectedProject.advisor || '-'}</Text>
+                  </div>
+                </Col>
+              </Row>
             </div>
 
-            {/* ไฟล์แนบที่ส่งมา */}
-            <div>
-              <Title level={4} className="flex items-center text-slate-800"><CheckCircleOutlined className="mr-2 text-green-500"/> ข้อมูลและไฟล์ที่ส่งมา</Title>
-              <div className="bg-white p-6 rounded-2xl border-2 border-slate-200">
-                 
-                 <Text strong className="text-lg text-slate-500 block mb-3">ตรวจสอบไฟล์ / ลิงก์แนบ:</Text>
-                 <div className="flex flex-col gap-3">
-                    {/* PDF File */}
-                    <div className="flex items-center justify-between p-4 bg-red-50 rounded-xl border border-red-100">
-                        <div className="flex items-center gap-3 text-red-600 font-bold text-lg">
-                            <FilePdfOutlined className="text-2xl" /> ไฟล์เอกสาร PDF
-                        </div>
-                        {selectedProject.pdf_file_path ? (
-                            <Button type="primary" danger shape="round" href={`http://localhost:5000/uploads/pdf/${selectedProject.pdf_file_path}`} target="_blank">เปิดดูไฟล์</Button>
-                        ) : <span className="text-slate-400 italic">ไม่มีไฟล์แนบ</span>}
-                    </div>
-
-                    {/* Google Drive */}
-                    <div className="flex items-center justify-between p-4 bg-blue-50 rounded-xl border border-blue-100">
-                        <div className="flex items-center gap-3 text-blue-600 font-bold text-lg">
-                            <GoogleOutlined className="text-2xl" /> โฟลเดอร์ Google Drive
-                        </div>
-                        {selectedProject.drive_url ? (
-                            <Button type="primary" className="bg-blue-500" shape="round" href={selectedProject.drive_url} target="_blank">เปิดลิงก์</Button>
-                        ) : <span className="text-slate-400 italic">ไม่มีลิงก์</span>}
-                    </div>
-
-                    {/* YouTube Video */}
-                    <div className="flex items-center justify-between p-4 bg-red-50/50 rounded-xl border border-red-100">
-                        <div className="flex items-center gap-3 text-red-500 font-bold text-lg">
-                            <YoutubeOutlined className="text-2xl" /> วิดีโอพรีเซนต์ (YouTube)
-                        </div>
-                        {selectedProject.video_url ? (
-                            <Button danger shape="round" href={selectedProject.video_url} target="_blank">ดูวิดีโอ</Button>
-                        ) : <span className="text-slate-400 italic">ไม่มีลิงก์</span>}
-                    </div>
-
-                    {/* GitHub */}
-                    <div className="flex items-center justify-between p-4 bg-slate-100 rounded-xl border border-slate-200">
-                        <div className="flex items-center gap-3 text-slate-700 font-bold text-lg">
-                            <GithubOutlined className="text-2xl" /> Source Code (GitHub)
-                        </div>
-                        {selectedProject.github_url ? (
-                            <Button className="bg-slate-800 text-white" shape="round" href={selectedProject.github_url} target="_blank">เปิด Repository</Button>
-                        ) : <span className="text-slate-400 italic">ไม่มีลิงก์</span>}
-                    </div>
-                 </div>
-
+            {/* Progress Section */}
+            <div className="bg-gradient-to-br from-slate-50 to-slate-100 p-6 rounded-2xl border border-slate-200">
+              <div className="flex justify-between items-center mb-4">
+                <Title level={4} className="!mb-0">📊 ความก้าวหน้า</Title>
+                <span className="text-4xl font-black text-indigo-600">{getProgressPercent(selectedProject.progress_status)}%</span>
               </div>
+
+              <Progress 
+                percent={getProgressPercent(selectedProject.progress_status)}
+                strokeColor={getProgressColor(selectedProject.progress_status)}
+                size={["100%", 20]}
+                format={() => null}
+              />
+
+              <Row gutter={16} className="mt-6">
+                <Col xs={12}>
+                  <Card className="rounded-lg border-0 bg-white text-center">
+                    <Text type="secondary" className="text-xs block">สถานะปัจจุบัน</Text>
+                    <Text strong className="text-lg text-indigo-600">{selectedProject.progress_status}</Text>
+                  </Card>
+                </Col>
+                <Col xs={12}>
+                  <Card className="rounded-lg border-0 bg-white text-center">
+                    <Text type="secondary" className="text-xs block">อัปเดตล่าสุด</Text>
+                    <Text strong className="text-lg">{formatDate(selectedProject.updated_at)}</Text>
+                  </Card>
+                </Col>
+              </Row>
             </div>
 
-            {/* Feedback Display */}
+            {/* Milestone Steps */}
             <div>
-              <Title level={4} className="flex items-center text-slate-800"><ExclamationCircleOutlined className="mr-2 text-orange-500"/> ข้อเสนอแนะ (Feedback)</Title>
-              <TextArea 
-                rows={6} 
-                placeholder="ไม่มีข้อเสนอแนะ..."
-                value={feedback}
-                readOnly
-                className="text-xl p-5 rounded-2xl border-slate-300 bg-slate-50 cursor-not-allowed shadow-inner"
+              <Title level={4}>🎯 ขั้นตอน Milestone</Title>
+              <Steps 
+                current={getMilestoneIndex(selectedProject.progress_status)}
+                items={milestoneSteps.map((m, i) => ({
+                  title: <span className="text-sm font-semibold">{m}</span>,
+                  status: i <= getMilestoneIndex(selectedProject.progress_status) ? 'finish' : 'wait'
+                }))}
               />
             </div>
-            
+
+            {/* Files Section */}
+            <div>
+              <Title level={4}>📁 ไฟล์และลิงก์</Title>
+              <div className="space-y-3">
+                {selectedProject.pdf_file_path && (
+                  <div className="flex items-center justify-between p-4 bg-red-50 rounded-xl border border-red-100 hover:shadow-md transition-all">
+                    <div className="flex items-center gap-3">
+                      <FilePdfOutlined className="text-2xl text-red-600" />
+                      <div>
+                        <Text strong className="text-red-600">เอกสาร PDF</Text>
+                        <Text type="secondary" className="text-xs block">โครงงาน</Text>
+                      </div>
+                    </div>
+                    <Button type="primary" danger shape="round" size="small" href={`http://localhost:5000/uploads/pdf/${selectedProject.pdf_file_path}`} target="_blank" onClick={() => sfx.success()}>📥 เปิด</Button>
+                  </div>
+                )}
+
+                {selectedProject.drive_url && (
+                  <div className="flex items-center justify-between p-4 bg-blue-50 rounded-xl border border-blue-100 hover:shadow-md transition-all">
+                    <div className="flex items-center gap-3">
+                      <GoogleOutlined className="text-2xl text-blue-600" />
+                      <div>
+                        <Text strong className="text-blue-600">Google Drive</Text>
+                        <Text type="secondary" className="text-xs block">โฟลเดอร์</Text>
+                      </div>
+                    </div>
+                    <Button type="primary" shape="round" size="small" className="bg-blue-500" href={selectedProject.drive_url} target="_blank" onClick={() => sfx.success()}>🔗 เปิด</Button>
+                  </div>
+                )}
+
+                {selectedProject.video_url && (
+                  <div className="flex items-center justify-between p-4 bg-red-50 rounded-xl border border-red-100 hover:shadow-md transition-all">
+                    <div className="flex items-center gap-3">
+                      <YoutubeOutlined className="text-2xl text-red-600" />
+                      <div>
+                        <Text strong className="text-red-600">วิดีโอ YouTube</Text>
+                        <Text type="secondary" className="text-xs block">นำเสนอ</Text>
+                      </div>
+                    </div>
+                    <Button danger shape="round" size="small" href={selectedProject.video_url} target="_blank" onClick={() => sfx.success()}>▶️ ดู</Button>
+                  </div>
+                )}
+
+                {selectedProject.github_url && (
+                  <div className="flex items-center justify-between p-4 bg-slate-100 rounded-xl border border-slate-200 hover:shadow-md transition-all">
+                    <div className="flex items-center gap-3">
+                      <GithubOutlined className="text-2xl text-slate-700" />
+                      <div>
+                        <Text strong className="text-slate-700">GitHub</Text>
+                        <Text type="secondary" className="text-xs block">Source Code</Text>
+                      </div>
+                    </div>
+                    <Button className="bg-slate-800 text-white" shape="round" size="small" href={selectedProject.github_url} target="_blank" onClick={() => sfx.success()}>💻 เปิด</Button>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Feedback */}
+            <div>
+              <Title level={4}>💬 ข้อเสนอแนะ</Title>
+              <TextArea 
+                rows={5}
+                value={selectedProject.feedback || 'ไม่มีข้อเสนอแนะ'}
+                readOnly
+                className="bg-slate-50 rounded-xl cursor-not-allowed"
+              />
+            </div>
+
+            <Button size="large" type="primary" block className="bg-indigo-600 hover:bg-indigo-700 font-bold h-12 rounded-xl" onClick={() => { sfx.success(); setIsDrawerOpen(false); }}>
+              ✅ ปิด
+            </Button>
           </div>
         )}
       </Drawer>
 
-      <style jsx="true">{`
-        .ant-table-thead > tr > th { 
-            background: #f8fafc !important; 
-            padding-top: 24px !important;
-            padding-bottom: 24px !important;
+      {/* Floating Button */}
+      <FloatButton
+        badge={{ count: pendingCount, style: { backgroundColor: '#f97316' } }}
+        type="primary"
+        className="bg-indigo-600 hover:bg-indigo-700"
+        icon={<BellOutlined className="text-xl" />}
+        tooltip={`${pendingCount} รอตรวจสอบ`}
+        style={{ right: 24, bottom: 80 }}
+        onClick={() => { sfx.alert(); setFilterStatus('รออนุมัติหัวข้อ'); }}
+      />
+
+      <style jsx>{`
+        @keyframes fadeInUp {
+          from { opacity: 0; transform: translateY(30px); }
+          to { opacity: 1; transform: translateY(0); }
         }
-        .custom-steps .ant-steps-item-title {
-            font-size: 16px !important;
-            line-height: 24px !important;
-            font-weight: bold;
+
+        .animate-fade-in-up {
+          animation: fadeInUp 0.6s ease-out;
         }
-        .custom-steps .ant-steps-item-tail::after {
-            background-color: #e2e8f0 !important;
+
+        .ant-table-thead > tr > th {
+          background: #f8fafc !important;
+          padding: 16px !important;
+          font-weight: 700 !important;
         }
-        .ant-select-single.ant-select-lg .ant-select-selector {
-            border-radius: 16px;
-            padding: 0 24px;
-            display: flex;
-            align-items: center;
+
+        .ant-table-tbody > tr {
+          transition: all 0.3s ease;
         }
-        .milestone-drawer .ant-drawer-header {
-            padding: 24px 32px;
-            border-bottom: 2px solid #f1f5f9;
+
+        .ant-table-tbody > tr:hover {
+          background-color: #eef2ff !important;
+          transform: scale(1.01);
         }
-        .milestone-drawer .ant-drawer-body {
-            padding: 32px;
+
+        * {
+          transition-property: color, background-color, border-color, fill, stroke, opacity, box-shadow, transform;
+          transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+          transition-duration: 200ms;
+        }
+
+        @media (max-width: 768px) {
+          .ant-table {
+            font-size: 12px;
+          }
         }
       `}</style>
     </Layout>
