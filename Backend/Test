@@ -1,0 +1,11 @@
+PORT=5000
+DB_HOST=127.0.0.1
+DB_PORT=5432
+DB_NAME=std_dj
+DB_USER=std_dj  
+DB_PASSWORD=5652ktecTXMsWXDn
+JWT_SECRET=1991
+CLIENT_URL=http://110.164.222.2 
+staff
+TC123 = ของครู
+HEAD_COM69 ของหัวหน้าแผนก

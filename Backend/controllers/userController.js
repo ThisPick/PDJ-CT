@@ -1,7 +1,7 @@
 import pool from '../config/db.js';
 import fs from 'fs';
 import path from 'path';
-import bcrypt from 'bcrypt'; // ⚠️ อย่าลืมรันคำสั่ง npm install bcrypt ในโฟลเดอร์หลังบ้านด้วยนะครับ
+import bcrypt from 'bcrypt'; 
 
 export const getAllUsers = async (req, res) => {
     try {
